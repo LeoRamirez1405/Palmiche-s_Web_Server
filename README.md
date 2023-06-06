@@ -6,5 +6,5 @@
 
 ### Para compilar:
 gcc webserver.c -o webserver
-### Para montar a Palmiche en el puerto '<port>' y a partir de la carpeta '<folder>' escribimos:
-./webserver '<port>' '<folder>'
+### Para montar a Palmiche en el puerto 'port' y a partir de la carpeta 'folder' escribimos:
+./webserver 'port' 'folder'
