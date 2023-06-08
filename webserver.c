@@ -8,6 +8,7 @@
 #include<arpa/inet.h>
 #include<string.h>
 #include<sys/stat.h>
+#include<sys/wait.h>
 #include<fcntl.h>
 #include<sys/sendfile.h>
 #include<errno.h>
@@ -25,6 +26,8 @@
 #define MAXBUF 20000
 #define LISTENQ 1024
 #define RIO_BUFSIZE 8192
+
+
 
 char * home_path;
 
@@ -341,9 +344,9 @@ void get_filetype(char *filename, char *filetype)
 }
 
 void clienterror(int fd, char *cause, char *errnum,char *shortmsg, char *longmsg)
-{  char *buf=(char *)calloc(sizeof(char), MAXLINE);//[MAXLINE], 
+{  
+    char *buf=(char *)calloc(sizeof(char), MAXLINE);//[MAXLINE], 
     char* body=(char *)calloc(sizeof(char), MAXBUF);//[MAXLINE], 
-    //char buf[MAXLINE], body[MAXBUF];
  /* Build the HTTP response body */
  sprintf(body, "<html><title>Palmiche's WebServer Error :( </title>");
  sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
@@ -424,7 +427,38 @@ void read_requestLines(rio_t *rp)
     }
     return;
 }
-    
+
+void serve_dynamic(int fd, char *filename, char *cgiargs) 
+{
+    char buf[MAXLINE], *emptylist[] = { NULL };
+    pid_t pid;
+    char*  var1 = "MAXLINE = 20000";
+    char*  var2 = "MAXBUF=20000";
+    char*  var3 = "LISTENQ=1024";
+    char*  var4 = "RIO_BUFSIZE=8192";
+    char *const environ[] = {var1,var2,var3,var4,NULL};
+
+     /* Send response headers to client */
+    sprintf(buf, "HTTP/1.0 200 OK\r\n");
+    rio_writen(fd, buf, strlen(buf));
+    sprintf(buf, "Server: Palmiche's WebServer\r\n");
+    rio_writen(fd, buf, strlen(buf));
+     /* Fork a child process to run the CGI script */
+    if ((pid = fork()) < 0) {
+        perror("fork");
+        exit(1);
+    }
+    else if (pid == 0) { /* Child process */
+        /* Set environment variables for the CGI script */
+        setenv("QUERY_STRING", cgiargs, 1);
+        dup2(fd, STDOUT_FILENO);         /* Redirect stdout to client */
+        execve(filename, emptylist, environ); /* Run CGI script */
+        exit(0);
+    }
+    else { /* Parent process */
+        waitpid(pid, NULL, 0); /* Wait for child to exit */
+    }
+}  
 void requestHandler(int fd)
 {
     int is_static;
@@ -466,22 +500,10 @@ void requestHandler(int fd)
             clienterror(fd, filename, "403", "Forbidden", "Palmiche's WebServer couldn't run the CGI program");
             return;
         }
+        serve_dynamic(fd,filename,cgiargs);
         return;
     }
 }
-
-/*
-2 * tiny.c - A simple, iterative HTTP/1.0 Web server that uses the
-3 * GET method to serve static and dynamic content.
-4 */
-//  void requestHandler(int fd);
-//  void read_requestLines(rio_t *rp);
-//  int parse_uri(char *uri, char *filename, char *cgiargs);
-//  void serve_static(int fd, char *filename, int filesize);
-//  void get_filetype(char *filename, char *filetype);
-//  void serve_dynamic(int fd, char *filename, char *cgiargs);
-//  void clienterror(int fd, char *cause, char *errnum,
-//  char *shortmsg, char *longmsg);
 
  int main(int argc, char **argv)
  {

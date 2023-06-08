@@ -1,0 +1,36 @@
+\documentclass{article}
+\usepackage{listings} %para insertar código
+\usepackage{xcolor}%para definir colores %definir el estilo de la caja 
+
+\title{Informe asociado al Palmiche's Web Server}
+\author{Leonardo Javier Ramirez Calatayud\\
+	Naomi Lahera Champagne\\}
+\date{\today}
+
+\begin{document}
+	\maketitle
+	\section{Iniciando el programa}  
+		Al ejecutar el programa lo primero que se verifica es si los valores introducidos $<$puerto$>$ y $<$dirección$>$ son válidos.
+		Una vez verificado lo anterior, se crea el socket del servidor y esperamos a que haya algun cliente conectado para manejar sus solicitudes.
+		
+		
+		Para crear el Socket del Server se creó la función $open\_fdSocketServer$. En ella se crea un descriptor de archivo para el socket del servidor utilizando la función "socket". Se especifica el protocolo de Internet (AF\_INET) y el tipo de socket (SOCK\_STREAM) que se utilizará para comunicarse con los clientes. Luego, se establece la opción "SO\_REUSEADDR" en el socket del servidor para evitar el error "Address already in use" al vincular el socket a un puerto específico. A continuación, se configura la dirección del servidor. Se especifica que el servidor aceptará conexiones en cualquier dirección IP utilizando la constante "INADDR\_ANY". También se especifica el número de puerto. Después, se vincula el socket del servidor a la dirección del servidor utilizando la función "bind". Finalmente, se configura el socket del servidor para que esté listo para aceptar conexiones utilizando la función "listen".
+		
+	\section{Manejo de solicitudes}
+	
+		Para ello se creó una función llamada $requestHandler$, que se utiliza para determinar si la solicitud es para contenido estático o dinámico. Luego, se inicializa una estructura "rio" para leer la solicitud entrante. A continuación, se lee la línea de solicitud y se analiza para obtener el método, la URI y la versión. Si el método no es "GET", se envía un error al cliente y se sale de la función. 
+		  
+		  
+		Luego se leen todas las líneas de la solicitud y se analizan. Después, se analiza la URI para determinar si se solicita contenido estático o dinámico. Si el archivo solicitado no existe, se envía un error al cliente y se sale de la función. 
+		   
+		
+		Si se solicita contenido estático, se comprueba si el archivo es un directorio o un archivo regular. Si es un directorio, se envía una lista de archivos en el directorio al cliente. Si es un archivo regular, se envía el contenido del archivo al cliente. Si se solicita contenido dinámico, se comprueba si el archivo es un archivo regular y si tiene permisos de ejecución. Si no, se envía un error al cliente, en caso contrario se procede a enviar el contenido dinámico al mismo. 
+		
+	\section{Crando el HTML}
+	
+		La función $create\_html\_code$ es la función que se encarga de crear el código HTML para mostrar el contenido de un directorio en el servidor web. En ella se utiliza la función $opendir$ para abrir el directorio y se comprueba si se ha podido abrir correctamente. Luego, se construye el encabezado del código HTML y se comienza a construir la tabla que contendrá la información de cada archivo y subdirectorio en el directorio. 
+		
+		Se utiliza la función $readdir$ para obtener información sobre cada archivo y subdirectorio en el directorio, y se utiliza la función $stat$ para obtener información adicional sobre cada archivo. Luego se itera sobre cada archivo y subdirectorio en el directorio. Se omite "." y ".." porque son los directorios de nivel superior y no se deben mostrar en la tabla. 
+		Luego, se construye un enlace para cada archivo o subdirectorio y se agrega a la tabla junto con su tamaño y fecha de modificación. Finalmente, se cierra el directorio y se concatena el código HTML final en la cadena de salida. 
+		
+\end{document}
