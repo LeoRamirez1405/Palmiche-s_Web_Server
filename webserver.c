@@ -182,13 +182,36 @@ void create_html_code(char * filename, char * output)
     }
 
     strcpy(output, "<html><h1>🐴 Palmiche's Server </h1>"); // Encabezado
+    strcat(output,"<style>"
+		"table {"
+			"border-collapse: collapse;"
+			"width: 100%;"
+		"}"
+		"th, td {"
+			"text-align: left;"
+			"padding: 8px;"
+		"}"
+		"th {"
+			"cursor: pointer;"
+		"}"
+		"th:hover {"
+			"background-color: #ddd;"
+		"}"
+	"</style>"
+    );
+   
     strcat(output, "<head>El Cuartel 🛖: "); // Encabezado
     strcat(output, filename); // Ruta completa (absolute path) del directorio o archivo por el que se esta buscando
-    strcat(output, "</head><body><table><tr><th>Name</th><th>Size</th><th>Date</th></tr>"); // Comenzando a construir la tabla con nombre, tamanno y fecha
+
+    strcat(output, "</head><body><tbody><table id=\"myTable\">"
+                                        "<tr> <thead>"
+                                        "<th onclick=\"sortTable(0)\">Nombre</th>"
+                                        "<th onclick=\"sortTable(1)\">Tamaño</th>"
+                                        "<th onclick=\"sortTable(2)\">Fecha</th>"
+                                        "</tr>  </thead>"); // Comenzando a construir la tabla con nombre, tamanno y fecha
 
     // Comenzando a agregar cada directorio y archivo
     struct dirent *direntp;
-
     while ((direntp = readdir(dirp)) != NULL) 
     {
         if(strcmp(direntp->d_name, ".") == 0 || strcmp(direntp->d_name, "..") == 0)
@@ -220,8 +243,48 @@ void create_html_code(char * filename, char * output)
 
         free(temp_time);
     }
+        strcat(output,"</table>");
+        strcat(output, "<script>"
+            "function sortTable(n) {"
+			"var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;"
+			"table = document.getElementById(\"myTable\");"
+			"switching = true;"
+			"dir = \"asc\";"
+			"while (switching) {"
+			"	switching = false;"
+			"	rows = table.rows;"
+			"	for (i = 1; i < (rows.length - 1); i++) {"
+			"		shouldSwitch = false;"
+			"		x = rows[i].getElementsByTagName(\"TD\")[n];"
+			"		y = rows[i + 1].getElementsByTagName(\"TD\")[n];"
+			"		if (dir == \"asc\") {"
+			"			if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {"
+			"				shouldSwitch = true;"
+			"				break;"
+			"			}"
+			"		} else if (dir == \"desc\") {"
+			"			if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {"
+			"				shouldSwitch = true;"
+			"				break;"
+			"			}"
+			"		}"
+			"	}"
+			"	if (shouldSwitch) {"
+			"		rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);"
+			"		switching = true;"
+			"		switchcount ++;"
+			"	} else {"
+			"		if (switchcount == 0 && dir == \"asc\") {"
+			"			dir = \"desc\";"
+			"			switching = true;"
+			"		}"
+			"	}"
+			"}"
+		"}"
+        "</script></body>");
     
-    strcat(output, "</table></body></html>"); // Copiando el contenido del final
+                    
+    strcat(output, "</html>"); // Copiando el contenido del final
     
     /* Cerramos el directorio */
     closedir(dirp);
