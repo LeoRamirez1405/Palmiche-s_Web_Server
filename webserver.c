@@ -200,15 +200,15 @@ void create_html_code(char * filename, char * output)
 	"</style>"
     );
    
-    strcat(output, "<head>El Cuartel 🛖: "); // Encabezado
+    strcat(output, "<head>Cuartel 🛖: "); // Encabezado
     strcat(output, filename); // Ruta completa (absolute path) del directorio o archivo por el que se esta buscando
 
-    strcat(output, "</head><body><tbody><table id=\"myTable\">"
-                                        "<tr> <thead>"
-                                        "<th onclick=\"sortTable(0)\">Nombre</th>"
-                                        "<th onclick=\"sortTable(1)\">Tamaño</th>"
-                                        "<th onclick=\"sortTable(2)\">Fecha</th>"
-                                        "</tr>  </thead>"); // Comenzando a construir la tabla con nombre, tamanno y fecha
+    strcat(output, "</head><body><table id=\"myTable\">"
+                                        "<tr>"
+                                        "<th onclick=\"sortTable(0,'str')\">Nombre</th>"
+                                        "<th onclick=\"sortTable(1,'int')\">Tamaño</th>"
+                                        "<th onclick=\"sortTable(2,'str')\">Fecha</th>"
+                                        "</tr>"); // Comenzando a construir la tabla con nombre, tamanno y fecha
 
     // Comenzando a agregar cada directorio y archivo
     struct dirent *direntp;
@@ -244,44 +244,43 @@ void create_html_code(char * filename, char * output)
         free(temp_time);
     }
         strcat(output,"</table>");
-        strcat(output, "<script>"
-            "function sortTable(n) {"
-			"var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;"
-			"table = document.getElementById(\"myTable\");"
-			"switching = true;"
-			"dir = \"asc\";"
-			"while (switching) {"
-			"	switching = false;"
-			"	rows = table.rows;"
-			"	for (i = 1; i < (rows.length - 1); i++) {"
-			"		shouldSwitch = false;"
-			"		x = rows[i].getElementsByTagName(\"TD\")[n];"
-			"		y = rows[i + 1].getElementsByTagName(\"TD\")[n];"
-			"		if (dir == \"asc\") {"
-			"			if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {"
-			"				shouldSwitch = true;"
-			"				break;"
-			"			}"
-			"		} else if (dir == \"desc\") {"
-			"			if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {"
-			"				shouldSwitch = true;"
-			"				break;"
-			"			}"
-			"		}"
-			"	}"
-			"	if (shouldSwitch) {"
-			"		rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);"
-			"		switching = true;"
-			"		switchcount ++;"
-			"	} else {"
-			"		if (switchcount == 0 && dir == \"asc\") {"
-			"			dir = \"desc\";"
-			"			switching = true;"
-			"		}"
-			"	}"
-			"}"
-		"}"
-        "</script></body>");
+        strcat(output, "<script> function sortTable(n,type) {"
+                        "var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;"
+                        "table = document.getElementById(\"myTable\");"
+                        "switching = true;"
+                        "dir = \"asc\";"
+                        "while (switching) {"
+                            "switching = false;"
+                            "rows = table.rows;"
+                            "for (i = 1; i < (rows.length - 1); i++) {"
+                                "shouldSwitch = false;"
+                                "x = rows[i].getElementsByTagName(\"TD\")[n];"
+                                "y = rows[i + 1].getElementsByTagName(\"TD\")[n];"
+                                "if (dir == \"asc\") {"
+                                    "if ((type==\"str\" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) or (type==\"int\" && parseFloat(x.innerHTML) > parseFloat(y.innerHTML))) {"
+                                        "shouldSwitch= true;"
+                                        "break;"
+                                    "}"
+                                "} else if (dir == \"desc\") {"
+                                    "if ((type==\"str\" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) or (type==\"int\" && parseFloat(x.innerHTML) < parseFloat(y.innerHTML))) {"
+                                    "shouldSwitch = true;"
+                                    "break;"
+                                    "}"
+                                "}"
+                            "}"
+                            "if (shouldSwitch) {"
+                                "rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);"
+                                "switching = true;"
+                                "switchcount ++;"
+                            "} else {"
+                                "if (switchcount == 0 && dir == \"asc\") {"
+                                    "dir = \"desc\";"
+                                    "switching = true;"
+                                "}"
+                            "}"
+                        "}"
+                    "}"
+                "</script></body>");
     
                     
     strcat(output, "</html>"); // Copiando el contenido del final
