@@ -22,10 +22,10 @@
 // #include <sys/types.h>
 //#include <sys/socket.h>
 
-#define MAXLINE 20000
-#define MAXBUF 20000
+#define MAXLINE 10000
+#define MAXBUF 400000
 #define LISTENQ 1024
-#define RIO_BUFSIZE 8192
+#define RIO_BUFSIZE 16384
 
 
 
@@ -431,20 +431,32 @@ rio_writen(fd, buf, strlen(buf));
 void serve_static(int fd, char *filename, int filesize, bool is_directory, struct stat sbuf)
 {
     int srcfd;
+    // char *srcp;
+    //, 
     char * filetype=(char *)calloc(sizeof(char), 1000);//[MAXLINE], 
     char * buf=(char *)calloc(sizeof(char), 20000);//[MAXBUF];
     
     if(is_directory){ // If is a directory (not a file)
          
             
-        char * output = (char *)calloc(sizeof(char), 200000);//[20000]; 
+        char * output = (char *)calloc(sizeof(char), 200000);//[20000];
+        //char * output = 
         create_html_code(filename, output);
-        filesize = strlen(output);
+        /* Leemos las entradas del directorio */
+        // printf("i-nodo\toffset\t\tlong\tnombre\t\tType\n");
+        // while ((direntp = readdir(dirp)) != NULL) {
+        // printf("%d\t%d\t%d\t%s\t%d\n", direntp->d_ino, direntp->d_off, direntp->d_reclen, direntp->d_name, direntp->d_type);
+        // }
+            
 
-        sprintf(buf, "HTTP/1.0 \r\n");
-        sprintf(buf, "%sServer: Palmiche's WebServer\r\n", buf);
+
+
+        filesize = strlen(output);
+        sprintf(buf, "HTTP/1.0 200 OK\r\n");
+        sprintf(buf, "%sServer: My WebServer\r\n", buf);
         sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
         sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, "text/html; charset=utf-8");
+        // sprintf(buf, "%scharset= utf-8\r\n\r\n", buf);
         
         rio_writen(fd, buf, strlen(buf));
         rio_writen(fd, output, filesize);
@@ -456,28 +468,35 @@ void serve_static(int fd, char *filename, int filesize, bool is_directory, struc
     
     
     /* Send response body to client */
-    else
-    { // If is a file
-
+    else{ // If is a file
         get_filetype(filename, filetype);
-        sprintf(buf, "HTTP/1.0  \r\n");
-        sprintf(buf, "%sServer: Palmiche's WebServer\r\n", buf);
+        sprintf(buf, "HTTP/1.0 200 OK\r\n");
+        sprintf(buf, "%sServer: My WebServer\r\n", buf);
+        sprintf(buf, "%sContent-Disposition: attachment; filename=\"%s\"\r\n", buf, filename); 
         sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
         sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
         rio_writen(fd, buf, strlen(buf));
 
         srcfd = open(filename, O_RDONLY, 0);
-        if(srcfd < 0)
-            clienterror(fd, filename, "404", "Not found","Couldn't find this file");
-        else
-            sendfile(fd, srcfd, NULL, sbuf.st_blksize);
+        if(fd < 0)
+            clienterror(fd, filename, "404", "Not found",
+                    "Couldn't find this file");
+        else{
+            while(sendfile(fd, srcfd, NULL, sbuf.st_blksize) > 0)
+            {
+            }
+        }
 
+        // srcp = mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
         close(srcfd);
+        // free(srcfd);
+        // rio_writen(fd, srcp, filesize);
+        // munmap(srcp, filesize);
     }
     free(filetype);
     free(buf);
 }
-    
+   
 void read_requestLines(rio_t *rp)
 {  
     char buf[MAXLINE];
