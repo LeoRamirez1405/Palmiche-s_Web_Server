@@ -14,7 +14,7 @@
 #include<errno.h>
 #include <sys/mman.h>
 #include <time.h>
-
+#include <pthread.h>
 #include<stdbool.h>
 
 // DIR dirent opendir readdir
@@ -540,8 +540,9 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
         waitpid(pid, NULL, 0); /* Wait for child to exit */
     }
 }  
-void requestHandler(int fd)
+void *requestHandler(void * arg)
 {
+    int fd = *((int *)arg);
     int is_static;
     struct stat sbuf;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -555,7 +556,7 @@ void requestHandler(int fd)
     if (strcasecmp(method, "GET")) 
     {
         clienterror(fd, method, "501", "Not Implemented","Palmiche's WebServer does not implement this method");
-        return;
+        //return;
     }
         read_requestLines(&rio);
         
@@ -564,7 +565,7 @@ void requestHandler(int fd)
     if (stat(filename, &sbuf) < 0) 
     {
         clienterror(fd, filename, "404", "Not found","Palmiche's WebServer couldn't find this file");
-        return;
+        //return;
     }
             
     if (is_static) 
@@ -579,10 +580,10 @@ void requestHandler(int fd)
         if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode))
         {
             clienterror(fd, filename, "403", "Forbidden", "Palmiche's WebServer couldn't run the CGI program");
-            return;
+          //  return;
         }
         serve_dynamic(fd,filename,cgiargs);
-        return;
+        //return;
     }
 }
 
@@ -590,7 +591,7 @@ void requestHandler(int fd)
  {
     int fdSocketServer, fdSocketClient, port, clientlen;
     struct sockaddr_in clientaddr;
-
+    pthread_t tid;
     home_path = strdup("/home");
 
     /* Check command line args */
@@ -606,9 +607,11 @@ void requestHandler(int fd)
 
     fdSocketServer = open_fdSocketServer(port);
     while (1) {
-        clientlen = sizeof(clientaddr);
+       clientlen = sizeof(clientaddr);
         fdSocketClient = accept(fdSocketServer, (SA *)&clientaddr, &clientlen);
-        requestHandler(fdSocketClient);
-        close(fdSocketClient);
+        int *client_fd = malloc(sizeof(int));
+        *client_fd = fdSocketClient;
+        pthread_create(&tid, NULL, requestHandler, (void *)client_fd);
+        pthread_detach(tid);
     }
 }
